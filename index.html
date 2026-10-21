@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ClassSync</title>
+  
+  <!-- PWA & iOS Offline Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ClassSync">
+  <meta name="theme-color" content="#F4F6FA">
+
+  <style>
+    :root {
+      --bg-color: #F4F6FA;
+      --card-bg: #FFFFFF;
+      --text-main: #1A1D1F;
+      --text-muted: #8E95A2;
+      --accent-orange: #E05A2B;
+      --accent-purple: #8B5CF6;
+      --accent-blue: #3B82F6;
+      --accent-green: #10B981;
+      --accent-teal: #14B8A6;
+      --danger: #EF4444;
+      --danger-bg: #FEE2E2;
+      --dark-card: #0D0F18;
+      --border-soft: #F0F2F6;
+      --pill-bg: #F5F6F9;
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-pill: 999px;
+      --shadow: 0 12px 32px rgba(20, 23, 38, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #F9F5F6 0%, #EEF2FA 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: max(20px, env(safe-area-inset-top)) 20px max(30px, env(safe-area-inset-bottom));
+    }
+
+    .app-container {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.85fr 1fr;
+      gap: 24px;
+    }
+
+    .left-col, .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .bottom-split {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 24px;
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Statistic Card (Top Left) */
+    .stat-badge {
+      background: var(--dark-card);
+      color: #FFF;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 210px;
+      width: 100%;
+      padding-top: 10px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 165px;
+      overflow: visible;
+    }
+
+    .chart-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 28px 0 38px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    /* Top Teachers / Courses List */
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--pill-bg);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    .clear-all-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+    }
+
+    .clear-all-btn:hover, .clear-all-btn:active {
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .pill-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .teacher-pill {
+      background: var(--pill-bg);
+      border-radius: var(--radius-pill);
+      padding: 10px 12px 10px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .teacher-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #FFF;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .teacher-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .teacher-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .teacher-sub {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pill-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .teacher-tag {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .delete-circle-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: #EAECEF;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .delete-circle-btn:hover, .delete-circle-btn:active {
+      background: var(--danger-bg);
+      color: var(--danger);
+      transform: scale(0.94);
+    }
+
+    /* Upcoming Events / Selected Date Classes */
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-soft);
+      gap: 10px;
+    }
+
+    .event-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .event-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .event-bar {
+      width: 4px;
+      height: 40px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .event-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    .event-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .view-btn {
+      background: var(--pill-bg);
+      border: none;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--danger);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .view-btn:hover, .view-btn:active {
+      background: var(--danger-bg);
+    }
+
+    /* Right Column: Calendar & Next Classes */
+    .cal-nav {
+      display: flex;
+      gap: 10px;
+    }
+
+    .cal-nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      row-gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .cal-day-head {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      padding-bottom: 8px;
+      position: relative;
+    }
+
+    .cal-day-head::after {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 5px;
+      background: #E2E6EE;
+      border-radius: 50%;
+      margin: 6px auto 0;
+    }
+
+    .cal-cell {
+      height: 36px;
+      width: 36px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .cal-cell.empty {
+      cursor: default;
+    }
+
+    .cal-cell.selected {
+      background: var(--accent-orange);
+      color: #FFF;
+      box-shadow: 0 6px 14px rgba(224, 90, 43, 0.35);
+    }
+
+    .cal-cell.has-class::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent-orange);
+    }
+
+    .cal-cell.selected.has-class::after {
+      background: #FFF;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 22px 0;
+    }
+
+    /* Akan Datang / Next Up Cards */
+    .next-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .next-pill {
+      background: var(--pill-bg);
+      border-radius: var(--radius-pill);
+      padding: 12px 18px 12px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .next-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .next-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      flex-shrink: 0;
+    }
+
+    .next-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .next-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    /* Promo / Quick Action Dark Card */
+    .promo-card {
+      background: var(--dark-card);
+      color: #FFF;
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 22px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .promo-card:active {
+      transform: scale(0.98);
+    }
+
+    .promo-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .promo-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #1E1B3A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .promo-action {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #252246;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #A78BFA;
+      font-weight: 700;
+    }
+
+    .promo-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .promo-desc {
+      font-size: 0.85rem;
+      color: #9CA3AF;
+      line-height: 1.45;
+      max-width: 85%;
+    }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 15, 24, 0.55);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #FFF;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 28px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1.5px solid #E5E7EB;
+      font-size: 0.92rem;
+      font-weight: 500;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-orange);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .day-selector {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .day-chip {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 12px;
+      background: var(--pill-bg);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+
+    .day-chip.active {
+      background: var(--accent-orange);
+      color: #FFF;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: var(--radius-pill);
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      background: var(--pill-bg);
+      color: var(--text-main);
+    }
+
+    .btn-save {
+      background: var(--accent-orange);
+      color: #FFF;
+    }
+
+    .empty-msg {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* Mobile Responsive Layout */
+    @media (max-width: 920px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+      .right-col {
+        order: -1;
+      }
+      .bottom-split {
+        grid-template-columns: 1fr;
+      }
+      .stat-badge {
+        font-size: 0.72rem;
+        padding: 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- LEFT COLUMN -->
+    <div class="left-col">
+      
+      <!-- Weekly Class Load Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Weekly Load</h2>
+          <div class="stat-badge">
+            <span><i class="dot" style="background:#8B5CF6"></i>Courses: <b id="totalCoursesCount">0</b></span>
+            <span><i class="dot" style="background:#E05A2B"></i>Weekly: <b id="weeklyClassesCount">0</b></span>
+          </div>
+        </div>
+        <div class="chart-box">
+          <svg class="chart-svg" viewBox="0 0 600 160" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineShadow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E05A2B" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#E05A2B" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <g fill="#8E95A2" font-size="11" font-weight="500">
+              <text x="0" y="20">5+</text>
+              <text x="0" y="55">4</text>
+              <text x="0" y="90">3</text>
+              <text x="0" y="125">2</text>
+              <text x="0" y="155">0</text>
+            </g>
+            <path id="chartArea" d="" fill="url(#lineShadow)"></path>
+            <path id="chartPath" d="" fill="none" stroke="#E05A2B" stroke-width="3.5" stroke-linecap="round"></path>
+          </svg>
+          <div class="chart-labels">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Split: My Courses & Selected Day's Classes -->
+      <div class="bottom-split">
+        
+        <!-- My Courses (With Direct Delete Option) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">My Courses</h2>
+            <div class="header-actions">
+              <button class="clear-all-btn" id="clearAllBtn" onclick="clearAllCourses()" title="Remove all courses">Clear All</button>
+              <button class="icon-btn" onclick="openModal()" title="Add Recurring Class">+</button>
+            </div>
+          </div>
+          <div class="pill-list" id="coursesList"></div>
+        </div>
+
+        <!-- Classes on Selected Date -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title" id="selectedDateHeading">Classes Today</h2>
+          </div>
+          <div class="events-list" id="dayClassesList"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN (Calendar & Next Up) -->
+    <div class="right-col">
+      <div class="card">
+        
+        <!-- Calendar Header -->
+        <div class="card-header">
+          <h2 class="card-title" id="calMonthTitle">Calendar</h2>
+          <div class="cal-nav">
+            <button onclick="changeMonth(-1)">&#10094;</button>
+            <button onclick="changeMonth(1)">&#10095;</button>
+          </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="cal-grid" id="calendarGrid"></div>
+
+        <div class="divider"></div>
+
+        <!-- Next Scheduled Classes -->
+        <div class="card-header" style="margin-bottom: 14px;">
+          <h2 class="card-title" style="font-size:1.1rem;">Upcoming Next</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted); cursor:pointer;" onclick="openModal()">+ Add Class</span>
+        </div>
+        <div class="next-list" id="upcomingNextList"></div>
+
+        <!-- Add Master Routine Card -->
+        <div class="promo-card" onclick="openModal()">
+          <div class="promo-top">
+            <div class="promo-badge">&#128227;</div>
+            <div class="promo-action">&#8646;</div>
+          </div>
+          <div class="promo-title">Master Routine</div>
+          <div class="promo-desc">Add a class once to any weekday and it syncs to all matching dates automatically.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CLASS MODAL -->
+  <div class="modal-backdrop" id="classModal">
+    <div class="modal-card">
+      <div class="card-header" style="margin-bottom:18px;">
+        <h2 class="card-title">Add Weekly Class</h2>
+        <button class="icon-btn" onclick="closeModal()">&#10005;</button>
+      </div>
+
+      <form id="classForm" onsubmit="saveNewClass(event)">
+        <div class="form-group">
+          <label>Course Name / Title</label>
+          <input type="text" id="courseTitle" class="form-control" placeholder="e.g. Data Structures (CSE 2101)" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instructor / Teacher</label>
+            <input type="text" id="teacherName" class="form-control" placeholder="e.g. Dr. Jane Cooper" required>
+          </div>
+          <div class="form-group">
+            <label>Room / Subject Tag</label>
+            <input type="text" id="roomTag" class="form-control" placeholder="e.g. Room 402" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="time" id="startTime" class="form-control" value="09:00" required>
+          </div>
+          <div class="form-group">
+            <label>End Time</label>
+            <input type="time" id="endTime" class="form-control" value="10:15" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Repeat Every (Select Days of Week)</label>
+          <div class="day-selector" id="daySelector">
+            <div class="day-chip" data-day="0">Su</div>
+            <div class="day-chip active" data-day="1">Mo</div>
+            <div class="day-chip" data-day="2">Tu</div>
+            <div class="day-chip active" data-day="3">We</div>
+            <div class="day-chip" data-day="4">Th</div>
+            <div class="day-chip" data-day="5">Fr</div>
+            <div class="day-chip" data-day="6">Sa</div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-save">Save to Routine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'classsync_master_routine_v1';
+    const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#E05A2B', '#14B8A6'];
+    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const DEFAULT_ROUTINE = [
+      { id: '1', title: 'Data Structures & Algo', teacher: 'Theresa Webb', room: 'Room 402', start: '09:00', end: '10:15', days: [0, 2], color: '#8B5CF6' },
+      { id: '2', title: 'Digital Logic Design', teacher: 'Darrell Steward', room: 'Lab 301', start: '10:30', end: '11:45', days: [1, 3], color: '#3B82F6' },
+      { id: '3', title: 'Object Oriented Prog.', teacher: 'Jane Cooper', room: 'Room 204', start: '12:00', end: '13:15', days: [0, 2, 4], color: '#10B981' },
+      { id: '4', title: 'Circuit Analysis', teacher: 'Eleanor Pena', room: 'Room 501', start: '14:00', end: '15:15', days: [1, 4], color: '#E05A2B' }
+    ];
+
+    let routine = loadRoutine();
+    let currentCalDate = new Date();
+    let selectedDate = new Date();
+
+    function loadRoutine() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) return JSON.parse(saved);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ROUTINE));
+      return DEFAULT_ROUTINE;
+    }
+
+    function saveRoutine() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(routine));
+      renderAll();
+    }
+
+    function formatTime12(time24) {
+      if (!time24) return '';
+      const [hStr, mStr] = time24.split(':');
+      let h = parseInt(hStr, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${mStr}${ampm}`;
+    }
+
+    function getClassesForWeekday(dayOfWeek) {
+      return routine
+        .filter(item => item.days.includes(dayOfWeek))
+        .sort((a, b) => a.start.localeCompare(b.start));
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      document.getElementById('calMonthTitle').textContent = `${MONTH_NAMES[month]} ${year}`;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].forEach(d => {
+        const head = document.createElement('div');
+        head.className = 'cal-day-head';
+        head.textContent = d;
+        grid.appendChild(head);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-cell empty';
+        grid.appendChild(empty);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cellDate = new Date(year, month, d);
+        const weekday = cellDate.getDay();
+        const hasClasses = getClassesForWeekday(weekday).length > 0;
+
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        if (hasClasses) cell.classList.add('has-class');
+
+        if (
+          cellDate.getDate() === selectedDate.getDate() &&
+          cellDate.getMonth() === selectedDate.getMonth() &&
+          cellDate.getFullYear() === selectedDate.getFullYear()
+        ) {
+          cell.classList.add('selected');
+        }
+
+        cell.textContent = d;
+        cell.onclick = () => {
+          selectedDate = cellDate;
+          renderCalendar();
+          renderSelectedDayClasses();
+        };
+        grid.appendChild(cell);
+      }
+    }
+
+    function changeMonth(offset) {
+      currentCalDate = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() + offset, 1);
+      renderCalendar();
+    }
+
+    function renderSelectedDayClasses() {
+      const weekday = selectedDate.getDay();
+      const classes = getClassesForWeekday(weekday);
+      const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+      document.getElementById('selectedDateHeading').textContent = isToday
+        ? `Today (${DAY_NAMES[weekday]})`
+        : `${DAY_NAMES[weekday]}, ${MONTH_NAMES[selectedDate.getMonth()].slice(0,3)} ${selectedDate.getDate()}`;
+
+      const list = document.getElementById('dayClassesList');
+      list.innerHTML = '';
+
+      if (classes.length === 0) {
+        list.innerHTML = `<div class="empty-msg">No classes scheduled for every ${DAY_NAMES[weekday]}.</div>`;
+        return;
+      }
+
+      classes.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'event-item';
+        row.innerHTML = `
+          <div class="event-left">
+            <div class="event-bar" style="background: ${c.color}"></div>
+            <div style="min-width:0;">
+              <div class="event-time">${formatTime12(c.start)} - ${formatTime12(c.end)} &bull; ${c.room}</div>
+              <div class="event-title">${c.title}</div>
+            </div>
+          </div>
+          <button class="view-btn" onclick="deleteClass('${c.id}')" title="Delete this course">Delete</button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    // Render Courses & Teachers Pill List with Delete Button on Every Course
+    function renderCoursesList() {
+      const container = document.getElementById('coursesList');
+      const clearBtn = document.getElementById('clearAllBtn');
+      container.innerHTML = '';
+
+      clearBtn.style.display = routine.length > 0 ? 'inline-block' : 'none';
+
+      if (routine.length === 0) {
+        container.innerHTML = `<div class="empty-msg">No courses added yet. Tap + to add one.</div>`;
+        return;
+      }
+
+      routine.forEach(c => {
+        const initials = c.teacher.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const daysLabel = c.days.map(d => DAY_NAMES[d].slice(0, 2)).join(', ');
+        const pill = document.createElement('div');
+        pill.className = 'teacher-pill';
+        pill.innerHTML = `
+          <div class="teacher-left">
+            <div class="avatar" style="background:${c.color}">${initials}</div>
+            <div class="teacher-info">
+              <div class="teacher-name">${c.title}</div>
+              <div class="teacher-sub">${c.teacher} &bull; ${daysLabel}</div>
+            </div>
+          </div>
+          <div class="pill-right">
+            <div class="teacher-tag">${c.room}</div>
+            <button class="delete-circle-btn" onclick="deleteClass('${c.id}')" title="Delete ${c.title}">&#10005;</button>
+          </div>
+        `;
+        container.appendChild(pill);
+      });
+    }
+
+    function renderUpcomingNext() {
+      const container = document.getElementById('upcomingNextList');
+      container.innerHTML = '';
+
+      const todayDay = new Date().getDay();
+      let upcoming = [];
+
+      for (let offset = 0; offset < 7; offset++) {
+        const checkDay = (todayDay + offset) % 7;
+        const dayMatches = getClassesForWeekday(checkDay);
+        dayMatches.forEach(c => {
+          upcoming.push({
+            ...c,
+            dayLabel: offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : DAY_NAMES[checkDay]
+          });
+        });
+        if (upcoming.length >= 2) break;
+      }
+
+      if (upcoming.length === 0) {
+        container.innerHTML = `<div class="empty-msg">No upcoming classes.</div>`;
+        return;
+      }
+
+      upcoming.slice(0, 2).forEach((c, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'next-pill';
+        pill.innerHTML = `
+          <div class="next-left">
+            <div class="next-icon" style="background:${ idx === 0 ? '#8B5CF6' : '#E05A2B' }">
+              &#128218;
+            </div>
+            <div style="min-width:0;">
+              <div class="next-title">${c.title}</div>
+              <div class="next-meta">${c.room} &bull; ${c.dayLabel}, ${formatTime12(c.start)}</div>
+            </div>
+          </div>
+          <span style="color:var(--text-muted); font-weight:700;">&#10095;</span>
+        `;
+        container.appendChild(pill);
+      });
+    }
+
+    function renderStatsAndChart() {
+      document.getElementById('totalCoursesCount').textContent = routine.length;
+      const totalWeeklySessions = routine.reduce((acc, c) => acc + c.days.length, 0);
+      document.getElementById('weeklyClassesCount').textContent = totalWeeklySessions;
+
+      const counts = [0, 1, 2, 3, 4, 5, 6].map(d => getClassesForWeekday(d).length);
+      const maxCount = Math.max(...counts, 4);
+      const xs = [45, 130, 220, 310, 400, 490, 575];
+      const ys = counts.map(c => 145 - (c / maxCount) * 115);
+
+      let pathD = `M ${xs[0]} ${ys[0]}`;
+      for (let i = 0; i < xs.length - 1; i++) {
+        const cx = (xs[i] + xs[i + 1]) / 2;
+        pathD += ` C ${cx} ${ys[i]}, ${cx} ${ys[i + 1]}, ${xs[i + 1]} ${ys[i + 1]}`;
+      }
+
+      document.getElementById('chartPath').setAttribute('d', pathD);
+      document.getElementById('chartArea').setAttribute('d', `${pathD} L ${xs[6]} 160 L ${xs[0]} 160 Z`);
+    }
+
+    document.querySelectorAll('.day-chip').forEach(chip => {
+      chip.addEventListener('click', () => chip.classList.toggle('active'));
+    });
+
+    function openModal() {
+      document.getElementById('classModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('classModal').classList.remove('active');
+    }
+
+    function saveNewClass(e) {
+      e.preventDefault();
+      const selectedDays = Array.from(document.querySelectorAll('.day-chip.active'))
+        .map(el => parseInt(el.dataset.day, 10));
+
+      if (selectedDays.length === 0) {
+        alert('Please select at least one day of the week!');
+        return;
+      }
+
+      const newEntry = {
+        id: Date.now().toString(),
+        title: document.getElementById('courseTitle').value.trim(),
+        teacher: document.getElementById('teacherName').value.trim(),
+        room: document.getElementById('roomTag').value.trim(),
+        start: document.getElementById('startTime').value,
+        end: document.getElementById('endTime').value,
+        days: selectedDays,
+        color: COLORS[routine.length % COLORS.length]
+      };
+
+      routine.push(newEntry);
+      saveRoutine();
+      document.getElementById('classForm').reset();
+      closeModal();
+    }
+
+    // Delete a single course with confirmation
+    function deleteClass(id) {
+      const target = routine.find(item => item.id === id);
+      if (!target) return;
+
+      if (confirm(`Delete "${target.title}" from your weekly schedule?`)) {
+        routine = routine.filter(item => item.id !== id);
+        saveRoutine();
+      }
+    }
+
+    // Clear all courses at once
+    function clearAllCourses() {
+      if (confirm('Are you sure you want to delete ALL courses from your routine?')) {
+        routine = [];
+        saveRoutine();
+      }
+    }
+
+    function renderAll() {
+      renderCalendar();
+      renderSelectedDayClasses();
+      renderCoursesList();
+      renderUpcomingNext();
+      renderStatsAndChart();
+    }
+
+    renderAll();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
